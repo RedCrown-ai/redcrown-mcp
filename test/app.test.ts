@@ -7,14 +7,19 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { app } from "../src/app.js";
 
-describe("mcp endpoint", () => {
-  it("is auth-gated: unauthenticated initialize returns 401", async () => {
-    const res = await request(app)
-      .post("/mcp")
+describe("app auth gating", () => {
+  it("returns 401 + WWW-Authenticate on the MCP endpoint without a token", async () => {
+    const res = await request(app).post("/mcp")
       .set("Accept", "application/json, text/event-stream")
       .set("Content-Type", "application/json")
       .send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "t", version: "1" } } });
     expect(res.status).toBe(401);
-    expect(res.headers["www-authenticate"]).toBeDefined();
+    expect(res.headers["www-authenticate"]).toContain("resource_metadata");
+  });
+
+  it("serves protected-resource metadata", async () => {
+    const res = await request(app).get("/.well-known/oauth-protected-resource");
+    expect(res.status).toBe(200);
+    expect(res.body.authorization_servers.length).toBeGreaterThan(0);
   });
 });
