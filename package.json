@@ -1,7 +1,7 @@
 {
   "name": "redcrown-mcp",
   "version": "1.0.0",
-  "description": "",
+  "description": "RedCrown MCP server: drive the RedCrown prove loop (run inputs across models/configs, get a ranked cost/quality/latency report) from Claude over remote MCP with OAuth.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -9,9 +9,9 @@
     "dev": "tsx src/index.ts",
     "test": "vitest run"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["mcp", "redcrown", "llm", "model-evaluation"],
+  "author": "RedCrown.ai",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
