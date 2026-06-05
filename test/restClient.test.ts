@@ -39,4 +39,33 @@ describe("RedcrownClient", () => {
     expect(JSON.parse(calls[0].init.body)).toEqual({ name: "x" });
     vi.unstubAllGlobals();
   });
+
+  it("posts to /experiments/scaffold and returns the scaffold spec", async () => {
+    const calls: any[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: any) => {
+      calls.push({ url, init });
+      return new Response(JSON.stringify({ name: "Transcribe audio", quality_metric: "wer" }), { status: 200 });
+    }));
+    const c = new RedcrownClient("https://api.example", "tok-abc");
+    const result = await c.scaffoldExperiment({ task: "Transcribe audio" }) as any;
+    expect(calls[0].url).toBe("https://api.example/experiments/scaffold");
+    expect(calls[0].init.method).toBe("POST");
+    expect(JSON.parse(calls[0].init.body)).toEqual({ task: "Transcribe audio" });
+    expect(calls[0].init.headers.Authorization).toBe("Bearer tok-abc");
+    expect(result.quality_metric).toBe("wer");
+    vi.unstubAllGlobals();
+  });
+
+  it("GETs /proxied-endpoints for listProxiedEndpoints", async () => {
+    const calls: any[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: any) => {
+      calls.push({ url, init });
+      return new Response(JSON.stringify([]), { status: 200 });
+    }));
+    const c = new RedcrownClient("https://api.example", "t");
+    await c.listProxiedEndpoints();
+    expect(calls[0].url).toBe("https://api.example/proxied-endpoints");
+    expect(calls[0].init.method).toBeUndefined();
+    vi.unstubAllGlobals();
+  });
 });
