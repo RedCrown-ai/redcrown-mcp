@@ -56,6 +56,21 @@ describe("RedcrownClient", () => {
     vi.unstubAllGlobals();
   });
 
+  it("posts the results body to /experiments/import and returns the ids", async () => {
+    const calls: any[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: any) => {
+      calls.push({ url, init });
+      return new Response(JSON.stringify({ experiment_id: "e1", run_id: "r1" }), { status: 201 });
+    }));
+    const c = new RedcrownClient("https://api.example", "tok-imp");
+    const result = await c.importResults({ name: "My eval", step: {}, candidates: [] });
+    expect(calls[0].url).toBe("https://api.example/experiments/import");
+    expect(calls[0].init.method).toBe("POST");
+    expect(JSON.parse(calls[0].init.body).name).toBe("My eval");
+    expect(result.run_id).toBe("r1");
+    vi.unstubAllGlobals();
+  });
+
   it("GETs /proxied-endpoints for listProxiedEndpoints", async () => {
     const calls: any[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string, init: any) => {

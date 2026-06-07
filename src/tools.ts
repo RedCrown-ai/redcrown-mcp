@@ -53,6 +53,11 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
       } },
     async (args) => ok(await clientFor().scaffoldExperiment(args)));
 
+  server.registerTool("import_results",
+    { description: "Upload an eval's aggregated per-candidate results (run in any harness or the redcrown CLI) as a ranked, shareable run. Pass the aggregate results object (name, objective, quality_metric, quality_bar, report_metrics, monthly_volume_minutes, step, candidates[, references]). Returns the experiment and run ids; share the run with create_review or a proof link.",
+      inputSchema: { results: z.record(z.string(), z.any()) } },
+    async ({ results }) => ok(await clientFor().importResults(results)));
+
   server.registerTool("setup_proxy",
     { description: "Create a proxied endpoint that captures live traffic for shadow evaluation. Returns the endpoint key and forward URL.",
       inputSchema: {

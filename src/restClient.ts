@@ -31,6 +31,7 @@ export class RedcrownClient {
 
   // Full prove-loop methods
   scaffoldExperiment(body: unknown) { return this.req<unknown>("/experiments/scaffold", { method: "POST", body: JSON.stringify(body) }); }
+  importResults(body: unknown) { return this.req<{ experiment_id: string; run_id: string }>("/experiments/import", { method: "POST", body: JSON.stringify(body) }); }
   createProxiedEndpoint(body: unknown) { return this.req<unknown>("/proxied-endpoints", { method: "POST", body: JSON.stringify(body) }); }
   listProxiedEndpoints() { return this.req<unknown>("/proxied-endpoints"); }
   replayCaptures(id: string) { return this.req<unknown>(`/proxied-endpoints/${id}/replay`, { method: "POST" }); }
