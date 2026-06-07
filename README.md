@@ -4,21 +4,44 @@
 
 ## Tools
 
+The server exposes the full prove loop as 16 tools.
+
+**Offline eval (Mode A)**
+
 | Tool | Description |
 |---|---|
 | `list_models` | List available providers and models, including free no-key models. |
+| `scaffold_experiment` | Turn a plain-language task description into a valid experiment spec ready to pass to `create_experiment`. |
 | `create_experiment` | Create a new experiment from a definition (name, pipeline, candidates, dataset). |
 | `run_experiment` | Queue a run for an experiment. Returns a run ID. |
-| `get_report` / `get_run` | Fetch the ranked cost/quality/latency report by run ID. |
 | `list_experiments` | List all experiments belonging to your account. |
+| `get_report` / `get_run` | Fetch the ranked cost/quality/latency report by run ID. |
 | `simulate_cost` | Get a projected cost estimate (hosted API and self-hosted per cloud) for a model and token counts. |
+| `import_results` | Upload an eval run from any harness (or the `redcrown` CLI) as a ranked, shareable run. |
+
+**Live proxy + capture (Mode B)**
+
+| Tool | Description |
+|---|---|
+| `setup_proxy` | Create a proxied endpoint that captures live traffic for shadow evaluation. Returns the endpoint key and forward URL. |
+| `list_proxies` | List all proxied endpoints for your workspace. |
+| `replay_captures` | Replay captured traffic through the shadow eval engine for a proxied endpoint. |
+
+**Reviewer validation + decision**
+
+| Tool | Description |
+|---|---|
+| `create_review` | Create a human-review session for a proxied endpoint's captures. |
+| `invite_reviewer` | Invite a reviewer to a session. Returns a one-time `app.redcrown.ai/review/<token>` link. |
+| `get_review_examples` | Get the candidate outputs for a captured request, ready for human review. |
+| `get_decision_report` | Get the aggregated decision report for a session, including reviewer verdicts and the recommended winner. |
 
 ## Add to Claude
 
 1. In Claude (Desktop, Claude Code, or claude.ai), open the MCP connectors settings and add a custom connector.
 2. Enter the hosted server URL. (The canonical URL is `https://mcp.redcrown.ai` once deployed.)
 3. On connect, Claude runs the OAuth flow. Log in with your RedCrown account.
-4. The seven tools listed above are then available in your Claude session.
+4. All of the tools listed above are then available in your Claude session.
 
 ## Environment variables
 
