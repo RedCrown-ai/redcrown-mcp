@@ -2,24 +2,35 @@
 
 `redcrown-mcp` is the RedCrown MCP server. It exposes the RedCrown "prove" loop (run your inputs across models and configs, and get a ranked cost/quality/latency report) as MCP tools, so you can drive it headlessly from Claude. You authenticate with your RedCrown account via OAuth. The server is a stateless shim: it validates your access token and forwards it to the RedCrown REST API, so it holds no secrets and all data stays scoped to your account.
 
-## Tools
+## Start here
 
-The server exposes the full prove loop as 16 tools.
-
-**Offline eval (Mode A)**
+Most callers need one tool:
 
 | Tool | Description |
 |---|---|
-| `list_models` | List available providers and models, including free no-key models. |
-| `scaffold_experiment` | Turn a plain-language task description into a valid experiment spec ready to pass to `create_experiment`. |
-| `create_experiment` | Create a new experiment from a definition (name, pipeline, candidates, dataset). |
+| `prove_task` | **One call.** A plain-language task + a few examples (`{input, output?}`) → RedCrown scaffolds, runs every model, and returns the cheapest one that clears your quality bar, with a shareable `proof_url`. Leave `output` blank to rank against the model you use now. |
+| `try_sample` | Zero-input demo on a public dataset → a shareable `proof_url`, no keys, no setup. |
+
+Example: `prove_task({ task: "classify support tickets", examples: [{ input: "My invoice charged me twice", output: "billing" }, { input: "the app crashes on settings", output: "bug" }] })`.
+
+## Tools
+
+Beyond the two core tools above, the full prove loop is exposed as `[advanced]` tools — granular control of an existing run. You rarely need them directly.
+
+**Offline eval (Mode A) — `[advanced]`**
+
+| Tool | Description |
+|---|---|
+| `import_results` | Upload an eval run from any harness (or the `redcrown` CLI) as a ranked, shareable run. (Core: surfaced first.) |
+| `get_report` / `get_run` | Fetch the ranked cost/quality/latency report by run ID. |
+| `scaffold_experiment` | Turn a plain-language task into a valid experiment spec ready for `create_experiment`. (`prove_task` does this for you.) |
+| `create_experiment` | Create an experiment from a full definition (name, pipeline, candidates, dataset). |
 | `run_experiment` | Queue a run for an experiment. Returns a run ID. |
 | `list_experiments` | List all experiments belonging to your account. |
-| `get_report` / `get_run` | Fetch the ranked cost/quality/latency report by run ID. |
-| `simulate_cost` | Get a projected cost estimate (hosted API and self-hosted per cloud) for a model and token counts. |
-| `import_results` | Upload an eval run from any harness (or the `redcrown` CLI) as a ranked, shareable run. |
+| `list_models` | List available providers and models, including free no-key models. |
+| `simulate_cost` | Projected cost (hosted API and self-hosted per cloud) for a model and token counts. |
 
-**Live proxy + capture (Mode B)**
+**Live proxy + capture (Mode B) — `[advanced]`**
 
 | Tool | Description |
 |---|---|
@@ -36,12 +47,32 @@ The server exposes the full prove loop as 16 tools.
 | `get_review_examples` | Get the candidate outputs for a captured request, ready for human review. |
 | `get_decision_report` | Get the aggregated decision report for a session, including reviewer verdicts and the recommended winner. |
 
-## Add to Claude
+## Connect your agent
 
-1. In Claude (Desktop, Claude Code, or claude.ai), open the MCP connectors settings and add a custom connector.
-2. Enter the hosted server URL. (The canonical URL is `https://mcp.redcrown.ai` once deployed.)
-3. On connect, Claude runs the OAuth flow. Log in with your RedCrown account.
-4. All of the tools listed above are then available in your Claude session.
+The hosted server is at **`https://mcp.redcrown.ai`**. On connect, your client runs the OAuth flow and you log in with your RedCrown account; the server holds no secrets. Then ask your agent to **`prove_task`** (or `try_sample`).
+
+**Claude (Desktop / claude.ai):** open MCP connector settings, add a custom connector, enter `https://mcp.redcrown.ai`, and approve the OAuth login.
+
+**Claude Code:**
+
+```bash
+claude mcp add --transport http redcrown https://mcp.redcrown.ai
+```
+
+**Cursor / Codex (and other `mcp.json`-style clients):**
+
+```json
+{
+  "mcpServers": {
+    "redcrown": {
+      "type": "http",
+      "url": "https://mcp.redcrown.ai"
+    }
+  }
+}
+```
+
+Once connected, try: *"Use RedCrown to prove the cheapest model for classifying these support tickets"* — the agent calls `prove_task` and returns a shareable proof link.
 
 ## Environment variables
 
