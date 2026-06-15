@@ -29,6 +29,9 @@ export class RedcrownClient {
     return this.req<unknown>(`/cost-estimate?${q.toString()}`);
   }
 
+  createProofLink(runId: string, body: unknown) { return this.req<{ token?: string }>(`/exp-runs/${runId}/proof-link`, { method: "POST", body: JSON.stringify(body) }); }
+  getProof(token: string) { return this.req<unknown>(`/proof/${token}`); }
+
   // Full prove-loop methods
   scaffoldExperiment(body: unknown) { return this.req<unknown>("/experiments/scaffold", { method: "POST", body: JSON.stringify(body) }); }
   importResults(body: unknown) { return this.req<{ experiment_id: string; run_id: string }>("/experiments/import", { method: "POST", body: JSON.stringify(body) }); }
