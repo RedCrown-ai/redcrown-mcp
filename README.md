@@ -80,9 +80,9 @@ The server reads these variables at startup. All four are required in production
 
 | Variable | Description |
 |---|---|
-| `REDCROWN_API_URL` | The RedCrown backend base URL, e.g. `https://redcrown-api-production.up.railway.app`. |
+| `REDCROWN_API_URL` | The RedCrown backend base URL, e.g. `https://api.redcrown.ai`. |
 | `REDCROWN_AS_ISSUER` | The OAuth Authorization Server issuer. Set this to the same backend URL. |
-| `REDCROWN_AS_JWKS_URL` | The JWKS endpoint on the backend, e.g. `https://redcrown-api-production.up.railway.app/oauth/jwks`. |
+| `REDCROWN_AS_JWKS_URL` | The JWKS endpoint on the backend, e.g. `https://api.redcrown.ai/oauth/jwks`. |
 | `REDCROWN_RESOURCE_URL` | This server's own public URL. **Must equal `https://mcp.redcrown.ai`** (or whatever value the backend was configured with as the access-token audience). The server verifies the `aud` claim on every token; a mismatch rejects the request. |
 | `PORT` | HTTP port to listen on. Default: `8080`. |
 
@@ -94,9 +94,9 @@ The server reads these variables at startup. All four are required in production
 npm ci
 npm run build
 
-REDCROWN_API_URL=https://redcrown-api-production.up.railway.app \
-REDCROWN_AS_ISSUER=https://redcrown-api-production.up.railway.app \
-REDCROWN_AS_JWKS_URL=https://redcrown-api-production.up.railway.app/oauth/jwks \
+REDCROWN_API_URL=https://api.redcrown.ai \
+REDCROWN_AS_ISSUER=https://api.redcrown.ai \
+REDCROWN_AS_JWKS_URL=https://api.redcrown.ai/oauth/jwks \
 REDCROWN_RESOURCE_URL=https://mcp.redcrown.ai \
 node dist/index.js
 ```
@@ -113,9 +113,9 @@ npm run dev
 docker build -t redcrown-mcp .
 
 docker run -p 8080:8080 \
-  -e REDCROWN_API_URL=https://redcrown-api-production.up.railway.app \
-  -e REDCROWN_AS_ISSUER=https://redcrown-api-production.up.railway.app \
-  -e REDCROWN_AS_JWKS_URL=https://redcrown-api-production.up.railway.app/oauth/jwks \
+  -e REDCROWN_API_URL=https://api.redcrown.ai \
+  -e REDCROWN_AS_ISSUER=https://api.redcrown.ai \
+  -e REDCROWN_AS_JWKS_URL=https://api.redcrown.ai/oauth/jwks \
   -e REDCROWN_RESOURCE_URL=https://mcp.redcrown.ai \
   redcrown-mcp
 ```
