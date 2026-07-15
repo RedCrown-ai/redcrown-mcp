@@ -22,4 +22,16 @@ describe("app auth gating", () => {
     expect(res.status).toBe(200);
     expect(res.body.authorization_servers.length).toBeGreaterThan(0);
   });
+
+  it("serves a human-readable landing page at / (no auth)", async () => {
+    const res = await request(app).get("/");
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toContain("text/html");
+    expect(res.text).toContain("RedCrown");
+    expect(res.text).toContain("prove_task");
+    // the connect instructions carry this server's own resource URL
+    expect(res.text).toContain("https://mcp.example");
+    // anonymity: no personal or company identity leaks onto the public page
+    expect(res.text).not.toMatch(/Beau|Method Data Science/i);
+  });
 });
