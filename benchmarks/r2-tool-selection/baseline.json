@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "variant": "baseline",
+  "system_prompt": "Select the single RedCrown MCP tool that best satisfies the user's request. Return exactly one tool name and no other text. Do not execute the tool.",
+  "tools": [
+    {"name":"prove_task","description":"Benchmark every model on a task and return the cheapest one that's good enough, with a shareable proof link. Pass a plain-language task and a few examples ({input, output?}); leave the output blank to rank against the model you use now. For a no-input demo, use try_sample."},
+    {"name":"try_sample","description":"Run a benchmark on a public sample dataset and return a shareable proof — no input, no keys, no account. Great for a quick demo. Optional task (default: transcribe)."},
+    {"name":"import_results","description":"Turn an eval you already ran (in any harness or the redcrown CLI) into a ranked, shareable run. Pass the aggregate results object (name, objective, quality_metric, quality_bar, step, candidates[, references]). Returns the experiment and run ids."},
+    {"name":"get_run","description":"Get an experiment run and its ranked report by run id."},
+    {"name":"get_report","description":"Alias of get_run: fetch the ranked proof report for a run id."},
+    {"name":"list_models","description":"[advanced] List available providers and models, including free no-key models."},
+    {"name":"list_experiments","description":"[advanced] List the caller's experiments."},
+    {"name":"create_experiment","description":"[advanced] Create an experiment from a full definition (name, objective, quality_metric, quality_bar, reference_source, allowed_providers, pipeline, dataset). Most callers should use prove_task instead."},
+    {"name":"run_experiment","description":"[advanced] Queue a run of an experiment by id; returns the run id to poll with get_report."},
+    {"name":"scaffold_experiment","description":"[advanced] Turn a plain-language task into a valid experiment spec ready for create_experiment. (prove_task does this for you.)"},
+    {"name":"simulate_cost","description":"[advanced] Estimate projected hosted-API and self-hosted (per cloud) cost for a model and token counts."},
+    {"name":"setup_proxy","description":"[advanced] Create a proxied endpoint that captures live traffic for shadow evaluation. Returns the endpoint key and forward URL."},
+    {"name":"list_proxies","description":"[advanced] List all proxied endpoints for the caller's workspace."},
+    {"name":"replay_captures","description":"[advanced] Replay captured traffic through the shadow eval engine for a proxied endpoint."},
+    {"name":"create_review","description":"[advanced] Create a human-review session for a proxied endpoint's captures."},
+    {"name":"invite_reviewer","description":"[advanced] Invite a reviewer to a review session. Returns a one-time token; the link is https://app.redcrown.ai/review/<token>."},
+    {"name":"get_review_examples","description":"[advanced] Get the candidate outputs for a captured request, ready for human review."},
+    {"name":"get_decision_report","description":"[advanced] Get the aggregated decision report for a review session, including reviewer verdicts and the recommended winner."}
+  ]
+}

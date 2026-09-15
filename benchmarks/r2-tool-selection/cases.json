@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "metric": "exact_match",
+  "output_field": "tool_name",
+  "cases": [
+    {
+      "id": "supplied-cli-report",
+      "request": "I already ran the evaluation with the redcrown CLI and have its aggregate results object. Add those results to RedCrown and rank them without calling any models.",
+      "expected_tool": "import_results"
+    },
+    {
+      "id": "supplied-external-harness",
+      "request": "These candidate outputs and scores came from our internal harness. Record the completed evaluation as a shareable RedCrown run; do not regenerate anything.",
+      "expected_tool": "import_results"
+    },
+    {
+      "id": "supplied-vendor-outputs",
+      "request": "We have finished outputs from three vendor models plus their quality scores. Import this finished evaluation so we can get experiment and run IDs.",
+      "expected_tool": "import_results"
+    },
+    {
+      "id": "fresh-basic-task",
+      "request": "Run several models on these support-ticket examples and tell me the cheapest model that clears our quality bar.",
+      "expected_tool": "prove_task"
+    },
+    {
+      "id": "fresh-prompt-evaluation",
+      "request": "Generate fresh model outputs for these extraction examples, benchmark them, and give me a proof link.",
+      "expected_tool": "prove_task"
+    },
+    {
+      "id": "fresh-plain-language",
+      "request": "I have a plain-language summarization task and five examples. Please perform the complete benchmark for me now.",
+      "expected_tool": "prove_task"
+    },
+    {
+      "id": "public-demo",
+      "request": "Show me the public RedCrown demo with no inputs, account, or provider keys.",
+      "expected_tool": "try_sample"
+    },
+    {
+      "id": "draft-only",
+      "request": "Turn this task description into a valid experiment definition for me to review. Do not save it and do not run any models.",
+      "expected_tool": "scaffold_experiment"
+    },
+    {
+      "id": "draft-with-candidates",
+      "request": "Draft a spec for an extraction experiment with my incumbent and two candidate model names. I only want the spec back for editing.",
+      "expected_tool": "scaffold_experiment"
+    },
+    {
+      "id": "save-prepared-definition",
+      "request": "I already have the complete experiment definition. Save it as an experiment, but do not execute it yet.",
+      "expected_tool": "create_experiment"
+    },
+    {
+      "id": "run-existing",
+      "request": "Execute the saved experiment with id exp_42 and return the run id.",
+      "expected_tool": "run_experiment"
+    },
+    {
+      "id": "rerun-existing",
+      "request": "Queue another run of our existing experiment exp_99. The definition is already saved.",
+      "expected_tool": "run_experiment"
+    },
+    {
+      "id": "list-existing",
+      "request": "List the experiments in my workspace so I can choose one.",
+      "expected_tool": "list_experiments"
+    },
+    {
+      "id": "list-models",
+      "request": "List the available model providers and models, including options that do not need a provider key.",
+      "expected_tool": "list_models"
+    },
+    {
+      "id": "list-proxies",
+      "request": "List all proxied endpoints in my workspace.",
+      "expected_tool": "list_proxies"
+    },
+    {
+      "id": "cost-only",
+      "request": "Estimate hosted API and self-hosted cost for llama-3 with 1200 prompt tokens and 300 completion tokens.",
+      "expected_tool": "simulate_cost"
+    }
+  ]
+}

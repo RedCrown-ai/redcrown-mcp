@@ -37,7 +37,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
   // ---- core: start here ----
 
   server.registerTool("prove_task",
-    { description: "Benchmark every model on a task and return the cheapest one that's good enough, with a shareable proof link. Pass a plain-language task and a few examples ({input, output?}); leave the output blank to rank against the model you use now. For a no-input demo, use try_sample.",
+    { description: "Run a fresh benchmark: RedCrown executes models on your task and returns the cheapest one that's good enough, with a shareable proof link. Pass a plain-language task and a few examples ({input, output?}); leave the output blank to rank against the model you use now. If outputs were already generated elsewhere, use import_results. For a no-input demo, use try_sample.",
       inputSchema: {
         task: z.string(),
         examples: z.array(z.object({ input: z.string(), output: z.string().optional() })).optional(),
@@ -89,7 +89,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     });
 
   server.registerTool("import_results",
-    { description: "Turn an eval you already ran (in any harness or the redcrown CLI) into a ranked, shareable run. Pass the aggregate results object (name, objective, quality_metric, quality_bar, step, candidates[, references]). Returns the experiment and run ids.",
+    { description: "Import and rank outputs from an eval already run in another harness or the redcrown CLI. This records supplied results and does not execute models. Pass the aggregate results object (name, objective, quality_metric, quality_bar, step, candidates[, references]). Returns the experiment and run ids. To generate fresh outputs, use prove_task.",
       inputSchema: { results: z.record(z.string(), z.any()) } },
     async ({ results }) => ok(await clientFor().importResults(results)));
 
@@ -114,17 +114,17 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     async () => ok(await clientFor().listExperiments()));
 
   server.registerTool("create_experiment",
-    { description: "[advanced] Create an experiment from a full definition (name, objective, quality_metric, quality_bar, reference_source, allowed_providers, pipeline, dataset). Most callers should use prove_task instead.",
+    { description: "[advanced] Save an experiment from a full definition (name, objective, quality_metric, quality_bar, reference_source, allowed_providers, pipeline, dataset). This does not run it; call run_experiment with the returned experiment id. Most callers should use prove_task instead.",
       inputSchema: { experiment: z.record(z.string(), z.any()) } },
     async ({ experiment }) => ok(await clientFor().createExperiment(experiment)));
 
   server.registerTool("run_experiment",
-    { description: "[advanced] Queue a run of an experiment by id; returns the run id to poll with get_report.",
+    { description: "[advanced] Execute an existing saved experiment by id. This queues model calls and returns the run id to poll with get_report. To draft a definition without creating or running it, use scaffold_experiment.",
       inputSchema: { experiment_id: z.string() } },
     async ({ experiment_id }) => ok(await clientFor().runExperiment(experiment_id)));
 
   server.registerTool("scaffold_experiment",
-    { description: "[advanced] Turn a plain-language task into a valid experiment spec ready for create_experiment. (prove_task does this for you.)",
+    { description: "[advanced] Draft a valid experiment definition from a plain-language task. This only returns a spec: it does not save an experiment or execute models. Review the spec, then pass it to create_experiment and call run_experiment. (prove_task performs the full flow for you.)",
       inputSchema: {
         task: z.string(),
         task_kind: z.string().optional(),
