@@ -1,6 +1,6 @@
 # redcrown-mcp
 
-`redcrown-mcp` is the RedCrown MCP server. It exposes the RedCrown "prove" loop (run your inputs across models and configs, and get a ranked cost/quality/latency report) as MCP tools, so you can drive it headlessly from Claude. You authenticate with your RedCrown account via OAuth. The server is a stateless shim: it validates your access token and forwards it to the RedCrown REST API, so it holds no secrets and all data stays scoped to your account.
+`redcrown-mcp` is the RedCrown MCP server. RedCrown helps teams check AI changes against defined requirements and inspect the evidence behind the result. This server exposes the hosted model-evaluation loop as MCP tools, so a coding agent can drive it: scaffold an experiment from a plain-language task, run your cases across models and configurations on your own keys, import results from another harness, review outputs, and get a shareable report. The offline regression check (`redcrown score`, `redcrown check`), harness comparison (`redcrown harness compare`) and baseline acceptance are CLI or app only; there is no MCP tool for them. You authenticate with your RedCrown account via OAuth. The server is a stateless shim: it validates your access token and forwards it to the RedCrown REST API, so it holds no secrets and all data stays scoped to your account.
 
 ## Start here
 
@@ -15,9 +15,9 @@ Example: `prove_task({ task: "classify support tickets", examples: [{ input: "My
 
 ## Tools
 
-Beyond the two core tools above, the full prove loop is exposed as `[advanced]` tools — granular control of an existing run. You rarely need them directly.
+Beyond the two core tools above, the full evaluation loop is exposed as `[advanced]` tools: granular control of an existing run. You rarely need them directly.
 
-**Offline eval (Mode A) — `[advanced]`**
+**Offline eval (Mode A), `[advanced]`**
 
 | Tool | Description |
 |---|---|
@@ -30,7 +30,7 @@ Beyond the two core tools above, the full prove loop is exposed as `[advanced]` 
 | `list_models` | List available providers and models, including free no-key models. |
 | `simulate_cost` | Projected cost (hosted API and self-hosted per cloud) for a model and token counts. |
 
-**Live proxy + capture (Mode B) — `[advanced]`**
+**Live proxy + capture (Mode B), `[advanced]`**
 
 | Tool | Description |
 |---|---|
@@ -72,7 +72,7 @@ claude mcp add --transport http redcrown https://mcp.redcrown.ai
 }
 ```
 
-Once connected, try: *"Use RedCrown to prove the cheapest model for classifying these support tickets"* — the agent calls `prove_task` and returns a shareable proof link.
+Once connected, try: *"Use RedCrown to find the cheapest model that clears my quality bar for classifying these support tickets"*. The agent calls `prove_task` and returns a shareable report link.
 
 ## Environment variables
 
