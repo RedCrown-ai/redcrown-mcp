@@ -67,7 +67,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
       if (run.status !== "complete") {
         return ok({
           status: run.status, run_id: runId, experiment_id: created.id,
-          error: run.error ?? "Run did not complete. You may need to connect a model (provider key) for this task — see list_models.",
+          error: run.error ?? "Run did not complete. You may need to connect a model (provider key) for this task; see list_models.",
         });
       }
       let proof_url: string | undefined;
@@ -79,7 +79,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     });
 
   server.registerTool("try_sample",
-    { description: "Run a benchmark on a public sample dataset and return a shareable proof — no input, no keys, no account. Great for a quick demo. Optional task (default: transcribe).",
+    { description: "Run a benchmark on a public sample dataset and return a shareable proof: no input, no keys, no account. Great for a quick demo. Optional task (default: transcribe).",
       inputSchema: { task: z.string().optional() } },
     async ({ task }) => {
       const key = task && SAMPLE_TOKENS[task] ? task : "transcribe";
@@ -89,7 +89,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     });
 
   server.registerTool("import_results",
-    { description: "Turn an eval you already ran (in any harness or the redcrown CLI) into a ranked, shareable run. Pass the aggregate results object (name, objective, quality_metric, quality_bar, step, candidates[, references]). Returns the experiment and run ids.",
+    { description: "Turn an eval you already ran (in any harness or the redcrown CLI) into a ranked, shareable run. Pass the aggregate results object (name, objective, quality_metric, quality_bar, step, candidates[, references]). Also accepts a `redcrown harness export` payload: quality_metric `checks`, one candidate, per-item `checks` on each receipt. Returns the experiment and run ids.",
       inputSchema: { results: z.record(z.string(), z.any()) } },
     async ({ results }) => ok(await clientFor().importResults(results)));
 
@@ -99,7 +99,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     async ({ run_id }) => ok(await clientFor().getRun(run_id)));
 
   server.registerTool("get_report",
-    { description: "Alias of get_run: fetch the ranked proof report for a run id.",
+    { description: "Alias of get_run: fetch the ranked proof report for a run id. A checks report (a pushed harness run) carries per-item `checks` and a worst-first checks summary instead of a model ranking.",
       inputSchema: { run_id: z.string() } },
     async ({ run_id }) => ok(await clientFor().getRun(run_id)));
 
