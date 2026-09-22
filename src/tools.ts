@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { ApiError } from "./restClient.js";
 import type { RedcrownClient } from "./restClient.js";
 
 type ClientFor = () => RedcrownClient;
@@ -13,23 +14,33 @@ const SAMPLE_TOKENS: Record<string, string> = {
 
 type Cand = {
   label?: string; mean_quality?: number | null; savings_vs_incumbent?: number | null;
-  is_winner?: boolean; is_incumbent?: boolean; clears_bar?: boolean;
+  is_winner?: boolean; is_incumbent?: boolean; clears_bar?: boolean; n_scored?: number | null;
 };
 function candidates(report: unknown): Cand[] {
   const per = (report as { per_step?: Record<string, Cand[]> } | null)?.per_step ?? {};
   return Object.values(per).flat();
 }
+function caveatsOf(report: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries((report ?? {}) as Record<string, unknown>)) {
+    if (k.endsWith("_caveat") && typeof v === "string" && v.trim()) out[k] = v;
+  }
+  return out;
+}
 function summarize(report: unknown) {
   const cands = candidates(report);
   const winner = cands.find((c) => c.is_winner) ?? null;
+  const issues = (report as { evidence_issues?: unknown } | null)?.evidence_issues;
   return {
     winner: winner
       ? { label: winner.label, quality: winner.mean_quality, savings_vs_incumbent: winner.savings_vs_incumbent }
       : null,
     ranked: cands.map((c) => ({
-      label: c.label, quality: c.mean_quality, is_winner: !!c.is_winner,
+      label: c.label, quality: c.mean_quality, n_scored: c.n_scored ?? null, is_winner: !!c.is_winner,
       is_incumbent: !!c.is_incumbent, clears_bar: !!c.clears_bar,
     })),
+    caveats: caveatsOf(report),
+    evidence_issues: Array.isArray(issues) ? issues : [],
   };
 }
 
@@ -37,13 +48,14 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
   // ---- core: start here ----
 
   server.registerTool("prove_task",
-    { description: "Benchmark every model on a task and return the cheapest one that's good enough, with a shareable proof link. Pass a plain-language task and a few examples ({input, output?}); leave the output blank to rank against the model you use now. For a no-input demo, use try_sample.",
+    { description: "Run a task against several models on your examples and rank them against your quality bar. Pass a plain-language task and a few examples ({input, output?}); leave output blank to rank against the model you use now. Returns the ranking, the report's caveats and evidence issues. Set publish: true to also create a share link; on the Free plan that uses the one hosted proof. For a stored example, use try_sample.",
       inputSchema: {
         task: z.string(),
         examples: z.array(z.object({ input: z.string(), output: z.string().optional() })).optional(),
         quality_bar: z.number().optional(),
+        publish: z.boolean().optional(),
       } },
-    async ({ task, examples, quality_bar }) => {
+    async ({ task, examples, quality_bar, publish }) => {
       const client = clientFor();
       const dataset = (examples ?? [])
         .filter((e) => e.input && e.input.trim())
@@ -70,12 +82,27 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
           error: run.error ?? "Run did not complete. You may need to connect a model (provider key) for this task; see list_models.",
         });
       }
+      let publication: Record<string, unknown> = { status: "not_requested" };
       let proof_url: string | undefined;
-      try {
-        const proof = await client.createProofLink(runId, { subject: (spec.name as string) ?? task, scope: null });
-        if (proof?.token) proof_url = `https://app.redcrown.ai/proof/${proof.token}`;
-      } catch { /* proof link is best-effort */ }
-      return ok({ experiment_id: created.id, run_id: runId, proof_url, ...summarize(run.report) });
+      if (publish) {
+        try {
+          const proof = await client.createProofLink(runId, { subject: (spec.name as string) ?? task, scope: null });
+          if (proof?.token) {
+            proof_url = `https://app.redcrown.ai/proof/${proof.token}`;
+            publication = { status: "published", proof_url };
+          } else {
+            publication = { status: "refused", reason: "The server returned no link token." };
+          }
+        } catch (e) {
+          const detail = e instanceof ApiError ? e.detail as { blockers?: unknown } | undefined : undefined;
+          publication = {
+            status: "refused",
+            reason: e instanceof Error ? e.message : String(e),
+            ...(detail && typeof detail === "object" && Array.isArray(detail.blockers) ? { blockers: detail.blockers } : {}),
+          };
+        }
+      }
+      return ok({ experiment_id: created.id, run_id: runId, proof_url, publication, ...summarize(run.report) });
     });
 
   server.registerTool("try_sample",
