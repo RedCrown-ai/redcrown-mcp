@@ -1,3 +1,14 @@
+export class ApiError extends Error {
+  constructor(public status: number, public detail: unknown) {
+    const text =
+      detail && typeof detail === "object" && typeof (detail as { message?: unknown }).message === "string"
+        ? (detail as { message: string }).message
+        : typeof detail === "string" ? detail : `HTTP ${status}`;
+    super(text);
+    this.name = "ApiError";
+  }
+}
+
 export class RedcrownClient {
   constructor(private baseUrl: string, private token: string) {}
 
@@ -11,9 +22,9 @@ export class RedcrownClient {
       },
     });
     if (!resp.ok) {
-      let detail = `HTTP ${resp.status}`;
-      try { detail = (await resp.json() as { detail?: string }).detail ?? detail; } catch { /* ignore */ }
-      throw new Error(detail);
+      let detail: unknown = undefined;
+      try { detail = (await resp.json() as { detail?: unknown }).detail; } catch { /* no JSON body */ }
+      throw new ApiError(resp.status, detail);
     }
     if (resp.status === 204) return undefined as T;
     return resp.json() as Promise<T>;

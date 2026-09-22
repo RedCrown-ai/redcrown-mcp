@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { RedcrownClient } from "../src/restClient.js";
+import { RedcrownClient, ApiError } from "../src/restClient.js";
 
 beforeEach(() => vi.restoreAllMocks());
 
@@ -82,5 +82,16 @@ describe("RedcrownClient", () => {
     expect(calls[0].url).toBe("https://api.example/proxied-endpoints");
     expect(calls[0].init.method).toBeUndefined();
     vi.unstubAllGlobals();
+  });
+
+  it("keeps a structured 409 detail on ApiError", async () => {
+    const detail = { error: "publish_blocked", message: "This run is not ready to publish.", blockers: [{ field: "grading_caveat", text: "re-run" }] };
+    globalThis.fetch = (async () => new Response(JSON.stringify({ detail }), { status: 409 })) as typeof fetch;
+    const client = new RedcrownClient("http://api", "tok");
+    const err = await client.createProofLink("r1", {}).catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(409);
+    expect(err.message).toBe("This run is not ready to publish.");
+    expect(err.detail).toEqual(detail);
   });
 });
