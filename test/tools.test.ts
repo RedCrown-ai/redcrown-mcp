@@ -125,4 +125,14 @@ describe("registerTools", () => {
     expect(out.proof_url).toContain("/proof/");
     expect(out.winner.label).toBe("Sample Winner");
   });
+
+  it("try_sample describes a stored example, not a new run", () => {
+    const server = new McpServer({ name: "t", version: "1" });
+    const cfgs: Record<string, any> = {};
+    const orig = server.registerTool.bind(server);
+    (server as any).registerTool = (n: string, cfg: any, h: any) => { cfgs[n] = cfg; return orig(n, cfg, h); };
+    registerTools(server, () => fakeClient([]) as any);
+    expect(cfgs.try_sample.description).toMatch(/stored/i);
+    expect(cfgs.try_sample.description).not.toMatch(/run a benchmark/i);
+  });
 });

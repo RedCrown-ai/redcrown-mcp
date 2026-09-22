@@ -7,12 +7,14 @@ import { loadConfig } from "./config.js";
 
 const cfg = loadConfig();
 
-const INSTRUCTIONS =
-  "RedCrown proves which model is cheapest at good-enough quality on your own data, " +
-  "and gives you a shareable, no-login proof page. Start with prove_task (one call: a " +
-  "plain-language task + a few examples {input, output?} -> ranked winner, savings, and " +
-  "a proof_url). Use try_sample for a zero-input demo on public data. The [advanced] tools " +
-  "are for granular control of an existing run; most callers only need prove_task.";
+export const INSTRUCTIONS =
+  "RedCrown checks a changed AI feature for regressions against a reference run and your written requirements, " +
+  "and keeps the evidence for each case. To record results you already have, call import_results " +
+  "with an aggregate payload or a `redcrown harness export` payload (per-check evidence). To run " +
+  "several models on a few examples and rank them, call prove_task; it publishes a share link only " +
+  "when you pass publish: true. get_run and get_report read a stored run with its caveats. " +
+  "The offline commands redcrown score and redcrown check are CLI only; an agent with a shell " +
+  "should run them directly. try_sample returns a stored example report.";
 
 export function buildServer(token: string): McpServer {
   const server = new McpServer(

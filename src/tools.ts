@@ -106,7 +106,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     });
 
   server.registerTool("try_sample",
-    { description: "Run a benchmark on a public sample dataset and return a shareable proof: no input, no keys, no account. Great for a quick demo. Optional task (default: transcribe).",
+    { description: "Return a stored example report (no input, no keys, no new run), with its ranking and caveats. Use it to see the report shape. Optional task (default: transcribe).",
       inputSchema: { task: z.string().optional() } },
     async ({ task }) => {
       const key = task && SAMPLE_TOKENS[task] ? task : "transcribe";
