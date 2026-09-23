@@ -87,9 +87,11 @@ export function landingPage(resourceUrl: string): string {
   <div class="tools">
     <div class="tool">
       <h3><code>prove_task</code></h3>
-      <p>One call. Give a plain-language task and a few examples. RedCrown runs several models, ranks them
-      against your quality bar, and returns the ranking with the report's caveats. Pass <code>publish: true</code>
-      to also create a share link. Leave the expected output blank to rank against the model you use now.</p>
+      <p>Give a plain-language task and a few examples. RedCrown runs several models, ranks them
+      against your quality bar, and returns the ranking with the report's caveats. When the scoring method is
+      not clear, it runs nothing and asks you to confirm a method with <code>quality_metric</code>. Pass
+      <code>publish: true</code> to also create a share link. Leave the expected output blank to rank against
+      the model you use now.</p>
     </div>
     <div class="tool">
       <h3><code>try_sample</code></h3>

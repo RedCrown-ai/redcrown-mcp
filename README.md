@@ -8,8 +8,8 @@ Most callers need one tool:
 
 | Tool | Description |
 |---|---|
-| `prove_task` | **One call.** A plain-language task + a few examples (`{input, output?}`) → RedCrown scaffolds, runs every model, and returns the cheapest one that clears your quality bar, with a shareable `proof_url`. Leave `output` blank to rank against the model you use now. |
-| `try_sample` | Zero-input demo on a public dataset → a shareable `proof_url`, no keys, no setup. |
+| `prove_task` | Give a plain-language task and a few examples (`{input, output?}`). RedCrown runs several models, ranks them against your quality bar, and returns the ranking with the report's caveats. When the scoring method is not clear, it runs nothing and returns `status: needs_confirmation` with the eligible methods. Call it again with `quality_metric` to confirm. Pass `publish: true` to also create a share link. Leave `output` blank to rank against the model you use now. |
+| `try_sample` | Returns a stored example report with its ranking and caveats. It needs no input, no keys and no setup, and it starts no new run. |
 
 Example: `prove_task({ task: "classify support tickets", examples: [{ input: "My invoice charged me twice", output: "billing" }, { input: "the app crashes on settings", output: "bug" }] })`.
 
@@ -72,7 +72,7 @@ claude mcp add --transport http redcrown https://mcp.redcrown.ai
 }
 ```
 
-Once connected, try: *"Use RedCrown to find the cheapest model that clears my quality bar for classifying these support tickets"*. The agent calls `prove_task` and returns a shareable report link.
+Once connected, try: *"Use RedCrown to rank models for classifying these support tickets, and publish the result"*. The agent calls `prove_task` with `publish: true` and gives you the share link.
 
 ## Environment variables
 

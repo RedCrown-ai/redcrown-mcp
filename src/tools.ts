@@ -28,7 +28,7 @@ const CONFIRM_REASON: Record<string, string> = {
     "Text matching can mark a correct answer with different wording as wrong.",
 };
 const INELIGIBLE_REASON: Record<string, string> = {
-  judge_needs_openai: "Connect an OpenAI key in Models & keys to use a judge.",
+  judge_needs_openai: "Connect an OpenAI key in the RedCrown app (Models & keys) to use a judge.",
   reference_not_json: "Your answers are not JSON objects.",
   references_not_labels: "Your answers are not short labels.",
   refused_by_validator: "This method cannot score these answers.",
@@ -72,7 +72,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
   // ---- core: start here ----
 
   server.registerTool("prove_task",
-    { description: "Run a task against several models on your examples and rank them against your quality bar. Pass a plain-language task and a few examples ({input, output?}); leave output blank to rank against the model you use now. Returns the ranking, the report's caveats and evidence issues. Set publish: true to also create a share link; on the Free plan that uses the one hosted proof. When the scoring method is not clear, the tool runs nothing and returns status needs_confirmation with the proposed method and the eligible options; confirm by calling again with quality_metric. For a stored example, use try_sample.",
+    { description: "Run a task against several models on your examples and rank them against your quality bar. Pass a plain-language task and a few examples ({input, output?}); leave output blank to rank against the model you use now. Returns the ranking, the report's caveats and evidence issues. Set publish: true to also create a share link; on the Free plan that uses the one hosted proof. When the scoring method is not clear, the tool runs nothing. It returns status needs_confirmation, the proposed method and the eligible options. To confirm, call again with quality_metric. For a stored example, use try_sample.",
       inputSchema: {
         task: z.string(),
         examples: z.array(z.object({ input: z.string(), output: z.string().optional() })).optional(),

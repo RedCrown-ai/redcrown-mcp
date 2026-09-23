@@ -172,7 +172,7 @@ describe("registerTools", () => {
     expect(out.metric_options).toEqual([
       { metric: "similarity", eligible: true, reason: null, reason_text: null },
       { metric: "exact_match", eligible: false, reason: "references_not_labels", reason_text: "Your answers are not short labels." },
-      { metric: "judge", eligible: false, reason: "judge_needs_openai", reason_text: "Connect an OpenAI key in Models & keys to use a judge." },
+      { metric: "judge", eligible: false, reason: "judge_needs_openai", reason_text: "Connect an OpenAI key in the RedCrown app (Models & keys) to use a judge." },
     ]);
     expect(out.next_step).toMatch(/quality_metric/);
     expect(out.next_step).toMatch(/Nothing ran/);
@@ -225,6 +225,29 @@ describe("registerTools", () => {
       message: "Your answers are not short labels.",
       next_step: "Call prove_task without quality_metric to see the eligible methods. Nothing ran and nothing was billed.",
     });
+  });
+
+  it("prove_task shows the scaffold's own note for a scaffolder_note confirmation", async () => {
+    const calls: string[] = [];
+    const note = "The reference cannot match an answer exactly, so the metric is similarity.";
+    const { handlers } = buildWith(calls, {
+      scaffoldExperiment: async () => {
+        calls.push("scaffoldExperiment");
+        return { ...AMBIGUOUS, metric_choice_note: note, metric_confirmation: { needed: true, reason: "scaffolder_note" } };
+      },
+    });
+    const out = JSON.parse((await handlers.prove_task({ task: "t", examples: EXAMPLES })).content[0].text);
+    expect(calls).toEqual(["scaffoldExperiment"]);
+    expect(out.reason_text).toBe(note);
+  });
+
+  it("prove_task rethrows a scaffold 422 that is not a metric refusal", async () => {
+    const calls: string[] = [];
+    const { handlers } = buildWith(calls, {
+      scaffoldExperiment: async () => { calls.push("scaffoldExperiment"); throw new ApiError(422, "dataset rows are invalid"); },
+    });
+    await expect(handlers.prove_task({ task: "t", examples: EXAMPLES, quality_metric: "similarity" })).rejects.toThrow("dataset rows are invalid");
+    expect(calls).toEqual(["scaffoldExperiment"]);
   });
 
   it("prove_task and scaffold_experiment accept quality_metric in their input schemas", () => {
