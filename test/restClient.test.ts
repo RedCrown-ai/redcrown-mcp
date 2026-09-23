@@ -86,12 +86,13 @@ describe("RedcrownClient", () => {
 
   it("keeps a structured 409 detail on ApiError", async () => {
     const detail = { error: "publish_blocked", message: "This run is not ready to publish.", blockers: [{ field: "grading_caveat", text: "re-run" }] };
-    globalThis.fetch = (async () => new Response(JSON.stringify({ detail }), { status: 409 })) as typeof fetch;
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail }), { status: 409 })));
     const client = new RedcrownClient("http://api", "tok");
     const err = await client.createProofLink("r1", {}).catch((e) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(409);
     expect(err.message).toBe("This run is not ready to publish.");
     expect(err.detail).toEqual(detail);
+    vi.unstubAllGlobals();
   });
 });
