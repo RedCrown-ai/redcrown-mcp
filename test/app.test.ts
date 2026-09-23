@@ -34,4 +34,12 @@ describe("app auth gating", () => {
     // anonymity: no personal or company identity leaks onto the public page
     expect(res.text).not.toMatch(/Beau|Method Data Science/i);
   });
+
+  it("landing page matches the tools: no default link, a stored sample, the real tool count", async () => {
+    const res = await request(app).get("/");
+    expect(res.text).toContain("publish: true");
+    expect(res.text).not.toMatch(/returns a (shareable )?proof link/i);
+    expect(res.text).toMatch(/try_sample<\/code><\/h3>\s*<p>[^<]*stored/i);
+    expect(res.text).toContain("Sixteen more advanced tools");
+  });
 });

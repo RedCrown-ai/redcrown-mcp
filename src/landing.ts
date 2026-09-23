@@ -71,9 +71,9 @@ export function landingPage(resourceUrl: string): string {
     </div>
     <div class="eyebrow">RedCrown &middot; MCP Server</div>
     <h1>The RedCrown prove-loop, as tools for your agent.</h1>
-    <p class="lede">Run your inputs across every model and config, and get back the cheapest one that
-    clears your quality bar, with a shareable proof. This endpoint exposes that loop to Claude and other
-    agents over the Model Context Protocol.</p>
+    <p class="lede">Check a changed AI feature against a reference run and your written requirements, and
+    keep the evidence for each case. This endpoint gives Claude and other agents access to your RedCrown
+    records over the Model Context Protocol.</p>
   </header>
 
   <div class="callout">
@@ -87,15 +87,16 @@ export function landingPage(resourceUrl: string): string {
   <div class="tools">
     <div class="tool">
       <h3><code>prove_task</code></h3>
-      <p>One call. A plain-language task plus a few examples, and RedCrown runs every model and returns the
-      cheapest that clears your bar, with a shareable proof link. Leave the expected output blank to rank against the model you use now.</p>
+      <p>One call. Give a plain-language task and a few examples. RedCrown runs several models, ranks them
+      against your quality bar, and returns the ranking with the report's caveats. Pass <code>publish: true</code>
+      to also create a share link. Leave the expected output blank to rank against the model you use now.</p>
     </div>
     <div class="tool">
       <h3><code>try_sample</code></h3>
-      <p>A zero-input demo on a public dataset. Returns a shareable proof link with no keys and no setup.</p>
+      <p>Returns a stored example report, with its ranking and caveats. It needs no input, no keys and no setup, and it starts no new run.</p>
     </div>
   </div>
-  <p style="margin-top:12px;font-size:.9rem;color:var(--muted)">Fifteen more advanced tools drive the full loop
+  <p style="margin-top:12px;font-size:.9rem;color:var(--muted)">Sixteen more advanced tools drive the full loop
   (import results, scaffold and run experiments, live proxy capture, and the reviewer decision report).</p>
 
   <h2>Connect your agent</h2>
@@ -111,8 +112,9 @@ export function landingPage(resourceUrl: string): string {
   }
 }</pre></li>
   </ul>
-  <p style="font-size:.92rem">Once connected, try: <em>"Use RedCrown to prove the cheapest model for
-  classifying these support tickets."</em> The agent calls <code>prove_task</code> and returns a proof link.</p>
+  <p style="font-size:.92rem">Once connected, try: <em>"Use RedCrown to rank models for classifying these
+  support tickets, and publish the result."</em> The agent calls <code>prove_task</code> with
+  <code>publish: true</code> and gives you the share link.</p>
 
   <div class="links">
     <a href="${site}">redcrown.ai</a>
