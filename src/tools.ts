@@ -17,6 +17,25 @@ type Publication =
   | { status: "published"; proof_url: string }
   | { status: "refused"; reason: string; blockers?: unknown[] };
 
+// Plain words for the scaffold's metric codes. The same sentences appear on
+// the app's confirm card (redcrown frontend/src/lib/metricConfirm.ts).
+const CONFIRM_REASON: Record<string, string> = {
+  judge_billed_to_you:
+    "A judge model scores each answer. It runs on your connected OpenAI key, so each case costs a judge call for each model.",
+  judge_unreachable:
+    "A judge model needs a connected OpenAI key. Without one, RedCrown compares the text.",
+  text_match_for_prose:
+    "Text matching can mark a correct answer with different wording as wrong.",
+};
+const INELIGIBLE_REASON: Record<string, string> = {
+  judge_needs_openai: "Connect an OpenAI key in Models & keys to use a judge.",
+  reference_not_json: "Your answers are not JSON objects.",
+  references_not_labels: "Your answers are not short labels.",
+  refused_by_validator: "This method cannot score these answers.",
+};
+type MetricOption = { metric: string; eligible: boolean; reason: string | null };
+type Confirmation = { needed?: boolean; reason?: string | null };
+
 type Cand = {
   label?: string; mean_quality?: number | null; savings_vs_incumbent?: number | null;
   is_winner?: boolean; is_incumbent?: boolean; clears_bar?: boolean; n_scored?: number | null;
@@ -53,14 +72,15 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
   // ---- core: start here ----
 
   server.registerTool("prove_task",
-    { description: "Run a task against several models on your examples and rank them against your quality bar. Pass a plain-language task and a few examples ({input, output?}); leave output blank to rank against the model you use now. Returns the ranking, the report's caveats and evidence issues. Set publish: true to also create a share link; on the Free plan that uses the one hosted proof. For a stored example, use try_sample.",
+    { description: "Run a task against several models on your examples and rank them against your quality bar. Pass a plain-language task and a few examples ({input, output?}); leave output blank to rank against the model you use now. Returns the ranking, the report's caveats and evidence issues. Set publish: true to also create a share link; on the Free plan that uses the one hosted proof. When the scoring method is not clear, the tool runs nothing and returns status needs_confirmation with the proposed method and the eligible options; confirm by calling again with quality_metric. For a stored example, use try_sample.",
       inputSchema: {
         task: z.string(),
         examples: z.array(z.object({ input: z.string(), output: z.string().optional() })).optional(),
         quality_bar: z.number().optional(),
         publish: z.boolean().optional(),
+        quality_metric: z.string().optional(),
       } },
-    async ({ task, examples, quality_bar, publish }) => {
+    async ({ task, examples, quality_bar, publish, quality_metric }) => {
       const client = clientFor();
       const dataset = (examples ?? [])
         .filter((e) => e.input && e.input.trim())
@@ -72,7 +92,41 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
       if (dataset.length === 0) {
         return ok({ error: "Provide at least one example { input, output? }, or call try_sample for a no-input demo." });
       }
-      const spec = (await client.scaffoldExperiment({ task, dataset })) as Record<string, unknown>;
+      let scaffolded: Record<string, unknown>;
+      try {
+        scaffolded = (await client.scaffoldExperiment(
+          quality_metric === undefined ? { task, dataset } : { task, dataset, quality_metric },
+        )) as Record<string, unknown>;
+      } catch (e) {
+        const detail = e instanceof ApiError ? e.detail as { error?: unknown; reason?: unknown } | undefined : undefined;
+        if (e instanceof ApiError && e.status === 422 && detail && detail.error === "metric_not_eligible") {
+          return ok({
+            status: "metric_not_eligible", quality_metric, reason: detail.reason ?? null, message: e.message,
+            next_step: "Call prove_task without quality_metric to see the eligible methods. Nothing ran and nothing was billed.",
+          });
+        }
+        throw e;
+      }
+      // The scaffold is free. Stop here, before any spend, when the server
+      // says the scoring method needs the caller's confirmation.
+      const { metric_options, metric_confirmation, ...spec } = scaffolded as Record<string, unknown> & {
+        metric_options?: MetricOption[]; metric_confirmation?: Confirmation;
+      };
+      if (metric_confirmation?.needed) {
+        const reason = metric_confirmation.reason ?? null;
+        return ok({
+          status: "needs_confirmation",
+          proposed_metric: spec.quality_metric,
+          reason,
+          reason_text: reason === "scaffolder_note"
+            ? (spec.metric_choice_note as string | undefined) ?? null
+            : (reason ? CONFIRM_REASON[reason] ?? null : null),
+          metric_options: (metric_options ?? []).map((o) => ({
+            ...o, reason_text: o.reason ? INELIGIBLE_REASON[o.reason] ?? null : null,
+          })),
+          next_step: "Call prove_task again with the same task and examples and quality_metric set to one eligible metric. Nothing ran and nothing was billed.",
+        });
+      }
       if (quality_bar !== undefined) spec.quality_bar = quality_bar;
       const created = (await client.createExperiment(spec)) as { id: string };
       let run = (await client.runExperiment(created.id)) as { id: string; status?: string; error?: string; report?: unknown };
@@ -107,7 +161,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
           };
         }
       }
-      return ok({ experiment_id: created.id, run_id: runId, proof_url, publication, ...summarize(run.report) });
+      return ok({ experiment_id: created.id, run_id: runId, quality_metric: spec.quality_metric, proof_url, publication, ...summarize(run.report) });
     });
 
   server.registerTool("try_sample",
@@ -156,7 +210,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
     async ({ experiment_id }) => ok(await clientFor().runExperiment(experiment_id)));
 
   server.registerTool("scaffold_experiment",
-    { description: "[advanced] Turn a plain-language task into a valid experiment spec ready for create_experiment. (prove_task does this for you.)",
+    { description: "[advanced] Turn a plain-language task into a valid experiment spec ready for create_experiment. (prove_task does this for you.) The response adds metric_options and metric_confirmation. When metric_confirmation.needed is true, pick an eligible metric and call again with quality_metric before create_experiment.",
       inputSchema: {
         task: z.string(),
         task_kind: z.string().optional(),
@@ -164,6 +218,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
         candidates: z.array(z.string()).optional(),
         quality_bar: z.number().optional(),
         dataset: z.array(z.record(z.string(), z.any())).optional(),
+        quality_metric: z.string().optional(),
       } },
     async (args) => ok(await clientFor().scaffoldExperiment(args)));
 

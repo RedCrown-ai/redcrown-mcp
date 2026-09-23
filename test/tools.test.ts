@@ -145,4 +145,100 @@ describe("registerTools", () => {
     expect(cfgs.try_sample.description).toMatch(/stored/i);
     expect(cfgs.try_sample.description).not.toMatch(/run a benchmark/i);
   });
+  // ---- metric confirmation before the spend ----
+
+  const AMBIGUOUS = {
+    name: "s", quality_metric: "similarity", quality_bar: 0.8, metric_choice_note: "",
+    metric_confirmation: { needed: true, reason: "judge_unreachable" },
+    metric_options: [
+      { metric: "similarity", eligible: true, reason: null },
+      { metric: "exact_match", eligible: false, reason: "references_not_labels" },
+      { metric: "judge", eligible: false, reason: "judge_needs_openai" },
+    ],
+  };
+  const EXAMPLES = [{ input: "Why is the sky blue?", output: "Sunlight scatters, and blue scatters the most." }];
+
+  it("prove_task stops before the spend when the scoring method needs confirmation", async () => {
+    const calls: string[] = [];
+    const { handlers } = buildWith(calls, {
+      scaffoldExperiment: async () => { calls.push("scaffoldExperiment"); return AMBIGUOUS; },
+    });
+    const out = JSON.parse((await handlers.prove_task({ task: "t", examples: EXAMPLES })).content[0].text);
+    expect(calls).toEqual(["scaffoldExperiment"]);
+    expect(out.status).toBe("needs_confirmation");
+    expect(out.proposed_metric).toBe("similarity");
+    expect(out.reason).toBe("judge_unreachable");
+    expect(out.reason_text).toBe("A judge model needs a connected OpenAI key. Without one, RedCrown compares the text.");
+    expect(out.metric_options).toEqual([
+      { metric: "similarity", eligible: true, reason: null, reason_text: null },
+      { metric: "exact_match", eligible: false, reason: "references_not_labels", reason_text: "Your answers are not short labels." },
+      { metric: "judge", eligible: false, reason: "judge_needs_openai", reason_text: "Connect an OpenAI key in Models & keys to use a judge." },
+    ]);
+    expect(out.next_step).toMatch(/quality_metric/);
+    expect(out.next_step).toMatch(/Nothing ran/);
+  });
+
+  it("prove_task with quality_metric sends the choice, then runs a spec without the two scaffold keys", async () => {
+    const calls: string[] = [];
+    let scaffoldBody: any; let created: any;
+    const { handlers } = buildWith(calls, {
+      scaffoldExperiment: async (b: any) => {
+        calls.push("scaffoldExperiment"); scaffoldBody = b;
+        return { ...AMBIGUOUS, metric_choice_note: "The owner chose similarity. RedCrown recommended similarity.",
+                 metric_confirmation: { needed: false, reason: null } };
+      },
+      createExperiment: async (b: any) => { calls.push("createExperiment"); created = b; return { id: "e1" }; },
+    });
+    const out = JSON.parse((await handlers.prove_task({ task: "t", examples: EXAMPLES, quality_metric: "similarity" })).content[0].text);
+    expect(scaffoldBody.quality_metric).toBe("similarity");
+    expect(calls).toContain("createExperiment");
+    expect(created.metric_options).toBeUndefined();
+    expect(created.metric_confirmation).toBeUndefined();
+    expect(created.quality_metric).toBe("similarity");
+    expect(out.quality_metric).toBe("similarity");
+    expect(out.status).toBeUndefined();
+  });
+
+  it("prove_task without a choice does not send quality_metric", async () => {
+    const calls: string[] = [];
+    let scaffoldBody: any;
+    const { handlers } = buildWith(calls, {
+      scaffoldExperiment: async (b: any) => { calls.push("scaffoldExperiment"); scaffoldBody = b; return { name: "s", quality_metric: "wer", quality_bar: 0.8 }; },
+    });
+    await handlers.prove_task({ task: "t", examples: EXAMPLES });
+    expect("quality_metric" in scaffoldBody).toBe(false);
+    expect(calls).toContain("createExperiment");
+  });
+
+  it("prove_task reports an ineligible choice and spends nothing", async () => {
+    const calls: string[] = [];
+    const { handlers } = buildWith(calls, {
+      scaffoldExperiment: async () => {
+        calls.push("scaffoldExperiment");
+        throw new ApiError(422, { message: "Your answers are not short labels.", error: "metric_not_eligible", reason: "references_not_labels" });
+      },
+    });
+    const out = JSON.parse((await handlers.prove_task({ task: "t", examples: EXAMPLES, quality_metric: "exact_match" })).content[0].text);
+    expect(calls).toEqual(["scaffoldExperiment"]);
+    expect(out).toEqual({
+      status: "metric_not_eligible", quality_metric: "exact_match", reason: "references_not_labels",
+      message: "Your answers are not short labels.",
+      next_step: "Call prove_task without quality_metric to see the eligible methods. Nothing ran and nothing was billed.",
+    });
+  });
+
+  it("prove_task and scaffold_experiment accept quality_metric in their input schemas", () => {
+    const server = new McpServer({ name: "t", version: "1" });
+    const cfgs: Record<string, any> = {};
+    const orig = server.registerTool.bind(server);
+    (server as any).registerTool = (n: string, cfg: any, h: any) => { cfgs[n] = cfg; return orig(n, cfg, h); };
+    registerTools(server, () => fakeClient([]) as any);
+    for (const name of ["prove_task", "scaffold_experiment"]) {
+      const field = cfgs[name].inputSchema.quality_metric;
+      expect(field, name).toBeDefined();
+      expect(field.safeParse(undefined).success, name).toBe(true);
+      expect(field.safeParse("similarity").success, name).toBe(true);
+    }
+    expect(cfgs.prove_task.description).toMatch(/confirm/i);
+  });
 });

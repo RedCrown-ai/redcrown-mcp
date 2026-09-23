@@ -12,7 +12,9 @@ export const INSTRUCTIONS =
   "and keeps the evidence for each case. To record results you already have, call import_results " +
   "with an aggregate payload or a `redcrown harness export` payload (per-check evidence). To run " +
   "several models on a few examples and rank them, call prove_task. It publishes a share link only " +
-  "when you pass publish: true. get_run and get_report read a stored run with its caveats. " +
+  "when you pass publish: true. When the scoring method is not clear, prove_task runs nothing " +
+  "and asks you to confirm a method with quality_metric. " +
+  "get_run and get_report read a stored run with its caveats. " +
   "The offline commands redcrown score and redcrown check are CLI only. An agent with a shell " +
   "should run them directly. try_sample returns a stored example report.";
 
