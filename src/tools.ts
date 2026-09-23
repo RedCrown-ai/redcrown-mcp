@@ -12,6 +12,11 @@ const SAMPLE_TOKENS: Record<string, string> = {
   transcribe: "O9iYVdWuaYjaL6mnImeIsD6TB1W_S6h4Frbx04YqAYQ",
 };
 
+type Publication =
+  | { status: "not_requested" }
+  | { status: "published"; proof_url: string }
+  | { status: "refused"; reason: string; blockers?: unknown[] };
+
 type Cand = {
   label?: string; mean_quality?: number | null; savings_vs_incumbent?: number | null;
   is_winner?: boolean; is_incumbent?: boolean; clears_bar?: boolean; n_scored?: number | null;
@@ -82,7 +87,7 @@ export function registerTools(server: McpServer, clientFor: ClientFor): void {
           error: run.error ?? "Run did not complete. You may need to connect a model (provider key) for this task; see list_models.",
         });
       }
-      let publication: Record<string, unknown> = { status: "not_requested" };
+      let publication: Publication = { status: "not_requested" };
       let proof_url: string | undefined;
       if (publish) {
         try {

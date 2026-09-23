@@ -109,6 +109,16 @@ describe("registerTools", () => {
     expect(out.proof_url).toBeUndefined();
   });
 
+  it("prove_task reports a refused publication when the server returns no link token", async () => {
+    const calls: string[] = [];
+    const { handlers } = buildWith(calls, {
+      createProofLink: async () => { calls.push("createProofLink"); return {}; },
+    });
+    const out = JSON.parse((await handlers.prove_task({ task: "t", examples: [{ input: "a" }], publish: true })).content[0].text);
+    expect(out.publication).toEqual({ status: "refused", reason: "The server returned no link token." });
+    expect(out.proof_url).toBeUndefined();
+  });
+
   it("prove_task publishes when asked", async () => {
     const calls: string[] = [];
     const { handlers } = build(calls);

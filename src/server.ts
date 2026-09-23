@@ -11,9 +11,9 @@ export const INSTRUCTIONS =
   "RedCrown checks a changed AI feature for regressions against a reference run and your written requirements, " +
   "and keeps the evidence for each case. To record results you already have, call import_results " +
   "with an aggregate payload or a `redcrown harness export` payload (per-check evidence). To run " +
-  "several models on a few examples and rank them, call prove_task; it publishes a share link only " +
+  "several models on a few examples and rank them, call prove_task. It publishes a share link only " +
   "when you pass publish: true. get_run and get_report read a stored run with its caveats. " +
-  "The offline commands redcrown score and redcrown check are CLI only; an agent with a shell " +
+  "The offline commands redcrown score and redcrown check are CLI only. An agent with a shell " +
   "should run them directly. try_sample returns a stored example report.";
 
 export function buildServer(token: string): McpServer {
